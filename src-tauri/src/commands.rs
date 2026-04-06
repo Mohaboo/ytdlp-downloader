@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::process::Stdio;
-use tauri::{api::process::Command, Manager, State, Window};
+use tauri::{api::process::Command, Window};
 use tokio::io::{AsyncBufReadExt, BufReader};
 use regex::Regex;
 
