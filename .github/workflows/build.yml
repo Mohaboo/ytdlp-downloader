@@ -33,6 +33,8 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path src-tauri/binaries
           Invoke-WebRequest -Uri "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" -OutFile "src-tauri/binaries/yt-dlp.exe"
+          # Copy with target triple name for Tauri sidecar
+          Copy-Item "src-tauri/binaries/yt-dlp.exe" "src-tauri/binaries/yt-dlp-x86_64-pc-windows-msvc.exe"
 
       - name: Build Tauri app
         run: npm run tauri:build

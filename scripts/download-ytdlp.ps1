@@ -16,6 +16,11 @@ try {
     Invoke-WebRequest -Uri $ytDlpUrl -OutFile $outputPath -UseBasicParsing
     Write-Host "yt-dlp downloaded successfully to: $outputPath" -ForegroundColor Green
     
+    # Also copy with target triple name for Tauri sidecar
+    $targetPath = "$binariesDir\yt-dlp-x86_64-pc-windows-msvc.exe"
+    Copy-Item $outputPath $targetPath -Force
+    Write-Host "Also created: $targetPath" -ForegroundColor Green
+    
     # Verify download
     if (Test-Path $outputPath) {
         $fileSize = (Get-Item $outputPath).Length / 1MB
