@@ -48,7 +48,7 @@ const defaultSettings: Settings = {
   youtubeLoggedIn: false,
 };
 
-export const useAppStore = create<AppState>((set, get) => ({
+export const useAppStore = create<AppState>((set) => ({
   // Navigation
   currentScreen: 'main',
   setScreen: (screen) => set({ currentScreen: screen }),

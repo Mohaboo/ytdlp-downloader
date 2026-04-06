@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/tauri';
 import { listen } from '@tauri-apps/api/event';
-import { useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import type { VideoInfo, DownloadProgress } from '@/types';
 
 // Check if Tauri is available
@@ -9,13 +9,15 @@ const isTauri = () => {
 };
 
 // Mock video info for browser testing
-const mockVideoInfo = (url: string): VideoInfo => ({
+const mockVideoInfo = (_url: string): VideoInfo => ({
   id: 'demo123',
   title: 'Sample YouTube Video - Tauri Desktop App Tutorial',
   channel: 'Tech Tutorials',
   duration: '15:42',
   views: '2.5M views',
   thumbnail: '',
+  quality: '1080p',
+  format: 'MP4',
   formats: [
     { format_id: '137', quality: '1080p', ext: 'mp4', filesize: 150000000 },
     { format_id: '136', quality: '720p', ext: 'mp4', filesize: 80000000 },

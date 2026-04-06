@@ -1,6 +1,6 @@
 import { 
   Folder, Film, FileText, Scissors, Keyboard, 
-  Youtube, Check, Globe, ExternalLink, Key 
+  Youtube, Check, Key 
 } from 'lucide-react';
 import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';

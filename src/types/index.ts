@@ -1,3 +1,10 @@
+export interface VideoFormat {
+  format_id: string;
+  quality: string;
+  ext: string;
+  filesize?: number;
+}
+
 export interface VideoInfo {
   id: string;
   title: string;
@@ -7,6 +14,7 @@ export interface VideoInfo {
   thumbnail: string;
   quality: string;
   format: string;
+  formats?: VideoFormat[];
 }
 
 export interface DownloadItem {
@@ -19,6 +27,14 @@ export interface DownloadItem {
   eta: string;
   size: string;
   path?: string;
+}
+
+export interface DownloadProgress {
+  download_id: string;
+  progress: number;
+  speed: string;
+  eta: string;
+  status: string;
 }
 
 export interface Settings {
