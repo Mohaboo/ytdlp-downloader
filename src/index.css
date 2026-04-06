@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  html {
+    @apply bg-background text-text-primary;
+  }
+  
+  body {
+    @apply bg-background text-text-primary min-h-screen;
+  }
+  
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-surface-low;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-text-muted;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-surface-bright/60 backdrop-blur-glass;
+  }
+  
+  .btn-primary {
+    @apply bg-primary hover:bg-primary-container text-white font-medium 
+           px-6 py-3 rounded-lg transition-all duration-200 
+           flex items-center justify-center gap-2
+           active:scale-[0.98];
+  }
+  
+  .btn-secondary {
+    @apply bg-transparent border border-border/20 hover:bg-surface-light
+           text-text-secondary font-medium px-6 py-3 rounded-lg 
+           transition-all duration-200 flex items-center justify-center gap-2
+           active:scale-[0.98];
+  }
+  
+  .btn-ghost {
+    @apply bg-transparent hover:bg-surface-light text-text-secondary 
+           font-medium px-4 py-2 rounded-lg transition-all duration-200
+           flex items-center justify-center gap-2;
+  }
+  
+  .input-field {
+    @apply bg-surface-light border border-border rounded-lg 
+           px-4 py-3 text-text-primary placeholder-text-muted
+           focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary
+           transition-all duration-200;
+  }
+  
+  .card {
+    @apply bg-surface rounded-xl p-4;
+  }
+  
+  .card-high {
+    @apply bg-surface-high rounded-xl p-4;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary to-primary-dim bg-clip-text text-transparent;
+  }
+  
+  .bg-gradient-primary {
+    @apply bg-gradient-to-br from-primary to-primary-container;
+  }
+  
+  .bg-gradient-success {
+    @apply bg-gradient-to-r from-secondary to-secondary-container;
+  }
+}
