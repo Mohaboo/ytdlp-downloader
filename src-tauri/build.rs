@@ -1,6 +1,5 @@
 use std::process::Command;
 use std::env;
-use std::path::PathBuf;
 
 fn main() {
     // Build the Tauri application
