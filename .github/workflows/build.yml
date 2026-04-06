@@ -26,6 +26,11 @@ jobs:
           toolchain: stable
           target: x86_64-pc-windows-msvc
 
+      - name: Install ImageMagick
+        run: |
+          choco install imagemagick -y
+          echo "C:\Program Files\ImageMagick" >> $env:GITHUB_PATH
+
       - name: Install dependencies
         run: npm ci
 
@@ -35,6 +40,16 @@ jobs:
           Invoke-WebRequest -Uri "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" -OutFile "src-tauri/binaries/yt-dlp.exe"
           # Copy with target triple name for Tauri sidecar
           Copy-Item "src-tauri/binaries/yt-dlp.exe" "src-tauri/binaries/yt-dlp-x86_64-pc-windows-msvc.exe"
+
+      - name: Generate icons
+        run: |
+          # Generate icon.ico from icon.png
+          $iconPath = "src-tauri/icons/icon.png"
+          $icoPath = "src-tauri/icons/icon.ico"
+          if (Test-Path $iconPath) {
+            magick convert $iconPath -define icon:auto-resize=256,128,64,48,32,16 $icoPath
+            Write-Host "Generated icon.ico"
+          }
 
       - name: Build Tauri app
         run: npm run tauri:build
