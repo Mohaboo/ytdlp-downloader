@@ -6,22 +6,17 @@
 mod commands;
 
 use commands::*;
-use tauri::{Manager, WindowEvent};
+use tauri::WindowEvent;
 
 fn main() {
     tauri::Builder::default()
-        .setup(|app| {
-            // Get the app handle for later use
-            let _app_handle = app.handle();
-            
-            // Ensure yt-dlp binary exists
-            // The sidecar should be automatically available
-            
+        .setup(|_app| {
+            // Setup code here if needed
             Ok(())
         })
         .on_window_event(|event| {
             match event.event() {
-                WindowEvent::CloseRequested { api, .. } => {
+                WindowEvent::CloseRequested { .. } => {
                     // Handle close request - could ask to cancel downloads
                 }
                 _ => {}

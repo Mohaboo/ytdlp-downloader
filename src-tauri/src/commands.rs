@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 use std::process::Stdio;
-use tauri::{api::process::Command, Window};
+use tauri::Window;
 use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::process::Command;
 use regex::Regex;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -36,10 +36,10 @@ pub struct DownloadProgress {
 /// Get video information from URL
 #[tauri::command]
 pub async fn get_video_info(url: String) -> Result<VideoInfo, String> {
-    let sidecar = Command::new_sidecar("yt-dlp")
-        .map_err(|e| format!("Failed to find yt-dlp: {}", e))?;
-
-    let output = sidecar
+    // Find yt-dlp sidecar binary
+    let yt_dlp_path = find_ytdlp()?;
+    
+    let output = Command::new(&yt_dlp_path)
         .args([
             "--dump-json",
             "--no-download",
@@ -51,11 +51,12 @@ pub async fn get_video_info(url: String) -> Result<VideoInfo, String> {
         .map_err(|e| format!("Failed to execute yt-dlp: {}", e))?;
 
     if !output.status.success() {
-        return Err(format!("yt-dlp error: {}", output.stderr));
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("yt-dlp error: {}", stderr));
     }
 
     // Parse JSON output
-    let json_str = output.stdout;
+    let json_str = String::from_utf8_lossy(&output.stdout);
     let data: serde_json::Value = serde_json::from_str(&json_str)
         .map_err(|e| format!("Failed to parse video info: {}", e))?;
 
@@ -91,40 +92,32 @@ pub async fn start_download(
     download_id: String,
     output_path: String,
     quality: String,
-    format: String,
+    _format: String,
 ) -> Result<(), String> {
-    let sidecar = Command::new_sidecar("yt-dlp")
-        .map_err(|e| format!("Failed to find yt-dlp: {}", e))?;
+    let yt_dlp_path = find_ytdlp()?;
 
     // Build quality format string
     let format_arg = match quality.as_str() {
-        "best" => "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best".to_string(),
-        "1080p" => "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080]".to_string(),
-        "720p" => "bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720]".to_string(),
-        "480p" => "bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/best[height<=480]".to_string(),
-        "audio" => "bestaudio[ext=m4a]/bestaudio".to_string(),
-        _ => "best[ext=mp4]/best".to_string(),
+        "best" => "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
+        "1080p" => "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080]",
+        "720p" => "bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720]",
+        "480p" => "bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/best[height<=480]",
+        "audio" => "bestaudio[ext=m4a]/bestaudio",
+        _ => "best[ext=mp4]/best",
     };
 
     let output_template = format!("{}/%(title)s.%(ext)s", output_path);
 
-    let mut args = vec![
-        "--newline",
-        "--progress",
-        "--no-warnings",
-        "-f", &format_arg,
-        "-o", &output_template,
-        "--no-playlist",
-    ];
-
-    // Add sponsorblock if needed
-    // args.push("--sponsorblock-remove");
-    // args.push("sponsor,intro,outro");
-
-    args.push(&url);
-
-    let mut child = sidecar
-        .args(&args)
+    let mut child = Command::new(&yt_dlp_path)
+        .args([
+            "--newline",
+            "--progress",
+            "--no-warnings",
+            "-f", format_arg,
+            "-o", &output_template,
+            "--no-playlist",
+            &url,
+        ])
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
@@ -138,10 +131,9 @@ pub async fn start_download(
     let progress_re = Regex::new(r"\[download\]\s+(\d+\.?\d*)%\s+of\s+~?\s*(\S+)\s+at\s+(\S+)\s+ETA\s+(\S+)").unwrap();
 
     // Read output lines
-    while let Some(line) = lines.next_line().await.map_err(|e| e.to_string())? {
+    while let Ok(Some(line)) = lines.next_line().await {
         if let Some(caps) = progress_re.captures(&line) {
             let progress: f64 = caps[1].parse().unwrap_or(0.0);
-            let size = caps[2].to_string();
             let speed = caps[3].to_string();
             let eta = caps[4].to_string();
 
@@ -159,7 +151,7 @@ pub async fn start_download(
     }
 
     // Wait for process to complete
-    let status = child.wait().await.map_err(|e| e.to_string())?;
+    let status = child.wait().await.map_err(|e| format!("Process error: {}", e))?;
 
     if status.success() {
         let _ = window.emit("download-complete", download_id);
@@ -171,7 +163,7 @@ pub async fn start_download(
 
 /// Cancel an ongoing download
 #[tauri::command]
-pub async fn cancel_download(download_id: String) -> Result<(), String> {
+pub async fn cancel_download(_download_id: String) -> Result<(), String> {
     // Implementation would track process handles and kill them
     // For now, just return success
     Ok(())
@@ -219,6 +211,31 @@ pub async fn open_folder(path: String) -> Result<(), String> {
     }
     
     Ok(())
+}
+
+// Helper function to find yt-dlp binary
+fn find_ytdlp() -> Result<std::path::PathBuf, String> {
+    // Check for sidecar binary first
+    let sidecar_paths = [
+        "binaries/yt-dlp-x86_64-pc-windows-msvc.exe",
+        "binaries/yt-dlp.exe",
+        "../binaries/yt-dlp-x86_64-pc-windows-msvc.exe",
+        "../binaries/yt-dlp.exe",
+    ];
+    
+    for path_str in &sidecar_paths {
+        let path = std::path::PathBuf::from(path_str);
+        if path.exists() {
+            return Ok(path);
+        }
+    }
+    
+    // Try to find in PATH
+    if let Ok(path) = which::which("yt-dlp") {
+        return Ok(path);
+    }
+    
+    Err("yt-dlp binary not found. Please ensure it's bundled with the app.".to_string())
 }
 
 // Helper functions
