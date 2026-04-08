@@ -4,6 +4,7 @@ import { Button } from './Button';
 import { useAppStore } from '@/stores/appStore';
 import { cn } from '@/utils/cn';
 import { useState } from 'react';
+import { startDownload } from '@/hooks/useTauri';
 
 const presets = [
   { id: 'best', icon: Star, label: 'Best Quality (1080p+)', color: 'text-tertiary' },
@@ -13,11 +14,58 @@ const presets = [
 ];
 
 export function QualitySelector() {
-  const { showQualitySelector, setShowQualitySelector } = useAppStore();
+  const { 
+    showQualitySelector, 
+    setShowQualitySelector, 
+    videoInfo, 
+    currentUrl,
+    settings,
+    addDownload 
+  } = useAppStore();
   const [selectedPreset, setSelectedPreset] = useState('best');
   const [embedSubtitles, setEmbedSubtitles] = useState(true);
+  const [isStarting, setIsStarting] = useState(false);
   
   if (!showQualitySelector) return null;
+  
+  const handleDownload = async () => {
+    if (!videoInfo) return;
+    
+    setIsStarting(true);
+    
+    // Create download ID
+    const downloadId = Date.now().toString();
+    
+    // Add to active downloads
+    addDownload({
+      id: downloadId,
+      videoId: videoInfo.id,
+      title: `${videoInfo.title}.${selectedPreset === 'audio' ? 'mp3' : 'mp4'}`,
+      status: 'downloading',
+      progress: 0,
+      speed: 'Starting...',
+      eta: 'Calculating...',
+      size: 'Unknown',
+    });
+    
+    // Close modal
+    setShowQualitySelector(false);
+    
+    try {
+      // Start actual download via Tauri
+      await startDownload(
+        currentUrl,
+        downloadId,
+        settings.downloadPath,
+        selectedPreset,
+        selectedPreset === 'audio' ? 'mp3' : 'mp4'
+      );
+    } catch (error) {
+      console.error('Download failed:', error);
+    } finally {
+      setIsStarting(false);
+    }
+  };
   
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -110,8 +158,12 @@ export function QualitySelector() {
           <Button variant="secondary" onClick={() => setShowQualitySelector(false)}>
             Cancel
           </Button>
-          <Button onClick={() => setShowQualitySelector(false)}>
-            Apply
+          <Button 
+            onClick={handleDownload}
+            isLoading={isStarting}
+            leftIcon={<Music size={16} />}
+          >
+            Download
           </Button>
         </div>
       </Card>

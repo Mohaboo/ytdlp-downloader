@@ -4,15 +4,26 @@ A modern, beautiful desktop application for downloading YouTube videos. Just dow
 
 ![App Screenshot](./screenshot.png)
 
-## 🚀 Quick Start (For Users)
+---
 
-### Download
-1. Go to [Releases](https://github.com/Mohaboo/ytdlp-downloader/releases)
-2. Download `YT-DLP Downloader-x.x.x-setup.exe`
-3. Double-click to install, or use the portable `.exe`
+## 🚀 Download & Install
 
-### That's it!
-No Node.js, no Rust, no yt-dlp installation required. Everything is bundled.
+### Option 1: Windows Installer (Recommended)
+➡️ **[Download YT-DLP Downloader](https://github.com/Mohaboo/ytdlp-downloader/releases/latest)**
+
+1. Click the link above ↑
+2. Download `YT-DLP Downloader-x.x.x-setup.exe` (the installer)
+3. Double-click to install
+
+### Option 2: Portable (No Install)
+➡️ **[Download Portable Version](https://github.com/Mohaboo/ytdlp-downloader/releases/latest)**
+
+1. Download `ytdlp-app.exe` 
+2. Double-click to run directly - no installation!
+
+### Requirements
+- ✅ Windows 10 or 11
+- ✅ Nothing else! (yt-dlp is bundled inside)
 
 ---
 
@@ -28,9 +39,9 @@ No Node.js, no Rust, no yt-dlp installation required. Everything is bundled.
 
 ---
 
-## 🛠️ Development (For Developers Only)
+## 🛠️ For Developers
 
-Want to build or modify this app? You'll need:
+Want to build or modify this app?
 
 ### Prerequisites
 - [Node.js](https://nodejs.org/) (v18 or later)
@@ -53,19 +64,16 @@ npm run tauri:dev
 ```bash
 npm run tauri:build
 ```
-Output will be in `src-tauri/target/release/bundle/`.
+Output: `src-tauri/target/release/bundle/`
 
 ---
 
-## 📦 What's Bundled
+## 📦 What's Inside
 
-The distributed app includes:
-- ✅ React frontend (~2MB)
-- ✅ Tauri runtime (~5MB)
-- ✅ yt-dlp downloader (~18MB)
-- ✅ Everything needed to run
-
-**Total size**: ~25MB
+The distributed app (~25MB) includes:
+- ✅ React frontend
+- ✅ Tauri runtime
+- ✅ yt-dlp downloader (bundled - no separate install!)
 
 ---
 
@@ -73,26 +81,13 @@ The distributed app includes:
 
 ```
 ytdlp-app/
-├── src/                    # React frontend
-│   ├── components/         # Reusable UI components
-│   ├── screens/            # Main screens
-│   ├── stores/             # Zustand state management
-│   └── types/              # TypeScript types
-├── src-tauri/              # Tauri (Rust) backend
-│   ├── src/
-│   └── binaries/           # Bundled yt-dlp
+├── src/                    # React frontend (source code)
+├── src-tauri/              # Rust backend (source code)
+│   └── binaries/           # yt-dlp gets bundled here during build
 └── package.json
 ```
 
----
-
-## 🎨 Design System
-
-- **Background**: `#1E1E2E` (Dark Navy)
-- **Surface**: `#252537`
-- **Primary**: `#7C3AED` (Purple)
-- **Secondary**: `#10B981` (Emerald)
-- **Font**: Inter
+**Note:** The `.exe` files are built from this source code and released on the [Releases page](https://github.com/Mohaboo/ytdlp-downloader/releases), not stored in the git repository.
 
 ---
 

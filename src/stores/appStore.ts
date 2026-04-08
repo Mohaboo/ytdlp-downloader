@@ -9,6 +9,7 @@ interface AppState {
   
   // Video preview
   videoInfo: VideoInfo | null;
+  currentUrl: string;
   setVideoInfo: (info: VideoInfo | null) => void;
   isLoadingVideo: boolean;
   loadVideoInfo: (url: string) => Promise<void>;
@@ -55,10 +56,11 @@ export const useAppStore = create<AppState>((set) => ({
   
   // Video preview
   videoInfo: null,
+  currentUrl: '',
   setVideoInfo: (info) => set({ videoInfo: info }),
   isLoadingVideo: false,
   loadVideoInfo: async (url: string) => {
-    set({ isLoadingVideo: true });
+    set({ isLoadingVideo: true, currentUrl: url });
     try {
       const info = await fetchVideoInfo(url);
       set({ videoInfo: info, isLoadingVideo: false });
