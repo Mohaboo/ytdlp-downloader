@@ -6,8 +6,6 @@ use tokio::process::Command;
 use regex::Regex;
 
 #[cfg(windows)]
-use std::os::windows::process::CommandExt;
-
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
