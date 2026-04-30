@@ -12,6 +12,7 @@ interface AppState {
   currentUrl: string;
   setVideoInfo: (info: VideoInfo | null) => void;
   isLoadingVideo: boolean;
+  videoError: string | null;
   loadVideoInfo: (url: string) => Promise<void>;
   
   // Downloads
@@ -59,14 +60,16 @@ export const useAppStore = create<AppState>((set) => ({
   currentUrl: '',
   setVideoInfo: (info) => set({ videoInfo: info }),
   isLoadingVideo: false,
+  videoError: null,
   loadVideoInfo: async (url: string) => {
-    set({ isLoadingVideo: true, currentUrl: url });
+    set({ isLoadingVideo: true, currentUrl: url, videoError: null });
     try {
       const info = await fetchVideoInfo(url);
       set({ videoInfo: info, isLoadingVideo: false });
     } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
       console.error('Failed to load video info:', error);
-      set({ isLoadingVideo: false });
+      set({ isLoadingVideo: false, videoError: message });
     }
   },
   

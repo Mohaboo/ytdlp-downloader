@@ -2,8 +2,11 @@ import { UrlInput } from './UrlInput';
 import { VideoPreview } from './VideoPreview';
 import { ActiveDownloads } from './ActiveDownloads';
 import { CompletedDownloads } from './CompletedDownloads';
+import { useAppStore } from '@/stores/appStore';
 
 export function MainScreen() {
+  const { videoError } = useAppStore();
+  
   return (
     <div className="flex-1 h-screen bg-background overflow-y-auto">
       {/* Top Bar */}
@@ -22,6 +25,13 @@ export function MainScreen() {
       <main className="p-6 max-w-5xl mx-auto space-y-5">
         {/* URL Input */}
         <UrlInput />
+        
+        {/* Error Message */}
+        {videoError && (
+          <div className="p-3 rounded-lg bg-error/10 border border-error/30 text-error text-sm">
+            {videoError}
+          </div>
+        )}
         
         {/* Video Preview */}
         <VideoPreview />

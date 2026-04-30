@@ -11,7 +11,6 @@ use tauri::WindowEvent;
 fn main() {
     tauri::Builder::default()
         .setup(|_app| {
-            // Setup code here if needed
             Ok(())
         })
         .on_window_event(|event| {

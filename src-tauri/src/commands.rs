@@ -5,6 +5,11 @@ use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 use regex::Regex;
 
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
+
+const CREATE_NO_WINDOW: u32 = 0x08000000;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VideoInfo {
     pub id: String,
@@ -39,13 +44,17 @@ pub async fn get_video_info(url: String) -> Result<VideoInfo, String> {
     // Find yt-dlp sidecar binary
     let yt_dlp_path = find_ytdlp()?;
     
-    let output = Command::new(&yt_dlp_path)
-        .args([
-            "--dump-json",
-            "--no-download",
-            "--ignore-errors",
-            &url,
-        ])
+    let mut cmd = Command::new(&yt_dlp_path);
+    cmd.args([
+        "--dump-json",
+        "--no-download",
+        "--ignore-errors",
+        &url,
+    ]);
+    #[cfg(windows)]
+    cmd.creation_flags(CREATE_NO_WINDOW);
+    
+    let output = cmd
         .output()
         .await
         .map_err(|e| format!("Failed to execute yt-dlp: {}", e))?;
@@ -99,8 +108,8 @@ pub async fn start_download(
     // Build quality format string
     let format_arg = match quality.as_str() {
         "best" => "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
-        "1080p" => "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080]",
-        "720p" => "bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720]",
+        "hd" | "1080p" => "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080]",
+        "mobile" | "720p" => "bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720]",
         "480p" => "bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/best[height<=480]",
         "audio" => "bestaudio[ext=m4a]/bestaudio",
         _ => "best[ext=mp4]/best",
@@ -108,18 +117,24 @@ pub async fn start_download(
 
     let output_template = format!("{}/%(title)s.%(ext)s", output_path);
 
-    let mut child = Command::new(&yt_dlp_path)
-        .args([
-            "--newline",
-            "--progress",
-            "--no-warnings",
-            "-f", format_arg,
-            "-o", &output_template,
-            "--no-playlist",
-            &url,
-        ])
+    let args = vec![
+        "--newline",
+        "--progress",
+        "--no-warnings",
+        "-f", format_arg,
+        "-o", &output_template,
+        "--no-playlist",
+        &url,
+    ];
+    
+    let mut cmd = Command::new(&yt_dlp_path);
+    cmd.args(&args)
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
+        .stderr(Stdio::piped());
+    #[cfg(windows)]
+    cmd.creation_flags(CREATE_NO_WINDOW);
+    
+    let mut child = cmd
         .spawn()
         .map_err(|e| format!("Failed to spawn yt-dlp: {}", e))?;
 
@@ -144,9 +159,9 @@ pub async fn start_download(
                 eta,
                 status: "downloading".to_string(),
             };
-
+            
             // Emit progress event to frontend
-            let _ = window.emit("download-progress", progress_data);
+            let _ = window.emit("download-progress", &progress_data);
         }
     }
 
@@ -154,7 +169,7 @@ pub async fn start_download(
     let status = child.wait().await.map_err(|e| format!("Process error: {}", e))?;
 
     if status.success() {
-        let _ = window.emit("download-complete", download_id);
+        let _ = window.emit("download-complete", &download_id);
         Ok(())
     } else {
         Err("Download failed".to_string())
@@ -215,7 +230,22 @@ pub async fn open_folder(path: String) -> Result<(), String> {
 
 // Helper function to find yt-dlp binary
 fn find_ytdlp() -> Result<std::path::PathBuf, String> {
-    // Check for sidecar binary first
+    // First, check next to the app executable (production install location)
+    if let Ok(exe_path) = std::env::current_exe() {
+        if let Some(exe_dir) = exe_path.parent() {
+            let candidates = [
+                exe_dir.join("yt-dlp-x86_64-pc-windows-msvc.exe"),
+                exe_dir.join("yt-dlp.exe"),
+            ];
+            for path in &candidates {
+                if path.exists() {
+                    return Ok(path.clone());
+                }
+            }
+        }
+    }
+    
+    // Check for sidecar binary relative to CWD (dev mode)
     let sidecar_paths = [
         "binaries/yt-dlp-x86_64-pc-windows-msvc.exe",
         "binaries/yt-dlp.exe",
